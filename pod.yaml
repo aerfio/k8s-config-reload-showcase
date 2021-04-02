@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: busybox
+  name: busybox
+spec:
+  volumes:
+    - name: cfg
+      configMap:
+        name: my-config
+  containers:
+  - args:
+    - /app/main
+    image: aerfio/reload:latest # change this img with the one you've build urself
+    imagePullPolicy: Always
+    name: main
+    volumeMounts:
+      - mountPath: /data
+        name: cfg
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+---
+apiVersion: v1
+data:
+  config.yaml: |
+    DUPA: "hello from cm"
+kind: ConfigMap
+metadata:
+  name: my-config
+
