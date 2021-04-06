@@ -29,13 +29,21 @@ import (
 func main() {
 	c := New()
 	for {
+		logrus.Info("-----------")
 		logrus.Info(c.v.GetString("DUPA"))
+		logrus.Info(c.cfg.Dupa)
+		logrus.Info("============")
 		time.Sleep(2 * time.Second)
 	}
 }
 
+type cfg struct {
+	Dupa string `mapstructure:"dupa"`
+}
+
 type Configuration struct {
-	v *viper.Viper
+	v   *viper.Viper
+	cfg *cfg
 }
 
 const (
@@ -47,7 +55,8 @@ const (
 
 func New() *Configuration {
 	c := Configuration{
-		v: viper.New(),
+		v:   viper.New(),
+		cfg: &cfg{},
 	}
 
 	c.v.SetDefault(varLogLevel, "info")
@@ -68,7 +77,18 @@ func New() *Configuration {
 	c.v.WatchConfig()
 	c.v.OnConfigChange(func(e fsnotify.Event) {
 		logrus.WithField("file", e.Name).WithField("eventName", e.String()).Warn("Config file changed")
+
+		cfg := &cfg{}
+		if err := c.v.Unmarshal(cfg); err != nil {
+			panic(fmt.Errorf("fatal error while unmarshalling config: %s", err))
+		}
+		c.cfg = cfg
 	})
+
+	if err := c.v.Unmarshal(c.cfg); err != nil {
+		panic(fmt.Errorf("fatal error while unmarshalling config: %s", err))
+	}
+
 	return &c
 }
 
